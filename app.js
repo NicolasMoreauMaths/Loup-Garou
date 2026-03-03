@@ -500,3 +500,38 @@ function setupPresence() {
   const ref = db.ref(`rooms/${roomCode}/players/${myId}`);
   ref.onDisconnect().remove();
 }
+
+// ══════════════════════════════════════════════════════
+//  Surveillance élimination (page role.html)
+// ══════════════════════════════════════════════════════
+function watchElimination() {
+  const id = sessionStorage.getItem('lgPlayerId');
+  const code = sessionStorage.getItem('lgRoomCode');
+  if (!id || !code || typeof firebase === 'undefined') return;
+
+  firebase.database().ref(`rooms/${code}/players/${id}`).on('value', snap => {
+    const player = snap.val();
+    if (!player) return;
+    if (player.alive === false) {
+      showDeadScreen(player);
+    }
+  });
+}
+
+function showDeadScreen(player) {
+  const overlay = document.getElementById('dead-overlay');
+  if (!overlay || !overlay.classList.contains('hidden')) return; // déjà affiché
+
+  const def = ROLES_DEF[player.role] || ROLES_DEF['village'];
+
+  document.getElementById('dead-player-name').textContent = `${player.avatar} ${player.name}`;
+  document.getElementById('dead-role-emoji').textContent = def.emoji;
+  document.getElementById('dead-role-name').textContent = def.name;
+  document.getElementById('dead-role-desc').textContent = def.desc;
+
+  // Cache l'overlay "tap to reveal" si encore visible
+  const tapOverlay = document.getElementById('tap-overlay');
+  if (tapOverlay) tapOverlay.classList.add('hidden');
+
+  overlay.classList.remove('hidden');
+}

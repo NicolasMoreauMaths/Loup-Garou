@@ -9,9 +9,95 @@
   <title>Ton rôle — Loup-Garou</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
+  <style>
+    .dead-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5,0,0,0.97);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 32px 24px;
+      gap: 20px;
+      text-align: center;
+    }
+    .dead-skull {
+      font-size: 100px;
+      animation: skull-fall 0.6s ease-out;
+      filter: drop-shadow(0 0 30px rgba(200,0,0,0.6));
+    }
+    @keyframes skull-fall {
+      0% { transform: translateY(-40px) scale(0.5); opacity: 0; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .dead-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--red2);
+      text-shadow: 0 0 30px rgba(231,76,60,0.6);
+      letter-spacing: 0.08em;
+    }
+    .dead-subtitle {
+      color: var(--text2);
+      font-style: italic;
+      font-size: 1rem;
+    }
+    .dead-role-reveal {
+      background: rgba(192,57,43,0.12);
+      border: 1px solid var(--red);
+      border-radius: 16px;
+      padding: 24px 28px;
+      width: 100%;
+      max-width: 320px;
+    }
+    .dead-role-reveal .reveal-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+    .dead-role-reveal .reveal-emoji { font-size: 56px; display: block; margin-bottom: 8px; }
+    .dead-role-reveal .reveal-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .dead-role-reveal .reveal-desc {
+      font-style: italic;
+      color: var(--text2);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .dead-spectator {
+      color: var(--text3);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
   <div class="moon"></div>
+
+  <!-- Overlay mort (caché par défaut) -->
+  <div class="dead-overlay hidden" id="dead-overlay">
+    <div class="dead-skull">💀</div>
+    <div class="dead-title">Tu es éliminé !</div>
+    <div class="dead-subtitle" id="dead-player-name"></div>
+    <div class="dead-role-reveal" id="dead-role-reveal">
+      <div class="reveal-label">Ton rôle était</div>
+      <span class="reveal-emoji" id="dead-role-emoji"></span>
+      <div class="reveal-name" id="dead-role-name"></div>
+      <div class="reveal-desc" id="dead-role-desc"></div>
+    </div>
+    <div class="dead-spectator">Tu restes spectateur jusqu'à la fin de la partie.<br>Chut, ne révèle pas ton rôle ! 🤫</div>
+  </div>
 
   <!-- Overlay "Appuie pour révéler" -->
   <div class="reveal-overlay" id="tap-overlay">
@@ -35,7 +121,6 @@
       </div>
     </div>
 
-    <!-- Section alliés loups (cachée par défaut) -->
     <div class="card hidden" id="wolf-allies">
       <h2 style="color:var(--red2);">🐺 Tes complices</h2>
       <p style="color:var(--text2);font-style:italic;margin-bottom:12px;">Ces joueurs sont aussi des loups-garous :</p>
@@ -51,15 +136,14 @@
       </p>
     </div>
 
-    <button class="btn btn-secondary btn-sm" onclick="history.back()" style="opacity:0.5;font-size:0.8rem;">
-      ← Retour au salon
-    </button>
-
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="app.js"></script>
-  <script>initRole();</script>
+  <script>
+    initRole();
+    watchElimination();
+  </script>
 </body>
 </html>

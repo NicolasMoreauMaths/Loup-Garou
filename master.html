@@ -9,12 +9,81 @@
   <title>Meneur — Loup-Garou</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
+  <style>
+    .master-player { cursor: pointer; transition: all 0.2s; }
+    .master-player:hover { border-color: var(--red); background: rgba(192,57,43,0.08); }
+    .master-player.dead { opacity: 0.5; cursor: default; }
+    .master-player.dead:hover { border-color: var(--border); background: var(--bg); }
+
+    .guide-card {
+      width: 100%; max-width: 420px;
+      background: rgba(10,10,30,0.9);
+      border: 1px solid #3a3a6a;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,80,0.4);
+    }
+    .guide-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8888cc;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .guide-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .guide-step {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      border-left: 3px solid #4444aa;
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .guide-step.current {
+      background: rgba(100,100,255,0.1);
+      border-left-color: #8888ff;
+      color: white;
+    }
+    .guide-step.done {
+      opacity: 0.4;
+      text-decoration: line-through;
+    }
+    .guide-step .step-num {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      color: #6666aa;
+      min-width: 20px;
+      padding-top: 1px;
+    }
+    .guide-step.current .step-num { color: #aaaaff; }
+
+    .guide-day {
+      border-left-color: #aa8800;
+    }
+    .guide-day.current {
+      background: rgba(200,146,42,0.1);
+      border-left-color: var(--accent2);
+    }
+    .guide-day .step-num { color: #886600; }
+    .guide-day.current .step-num { color: var(--accent2); }
+  </style>
 </head>
 <body>
   <div class="moon"></div>
   <div class="page" style="gap:16px;">
 
-    <!-- Header meneur -->
     <div style="width:100%;max-width:420px;display:flex;align-items:center;gap:12px;">
       <div style="font-size:2rem;">🐺</div>
       <div>
@@ -23,13 +92,16 @@
       </div>
     </div>
 
-    <!-- Phase actuelle -->
-    <div id="phase-banner" class="phase-banner phase-night" style="width:100%;max-width:420px;">
-      🌙 Nuit 1
-    </div>
-
-    <!-- Bannière victoire (cachée) -->
+    <div id="phase-banner" class="phase-banner phase-night" style="width:100%;max-width:420px;">🌙 Nuit 1</div>
     <div id="win-banner" class="alert alert-success hidden" style="width:100%;max-width:420px;font-size:1.1rem;padding:16px;"></div>
+
+    <!-- Guide du meneur -->
+    <div class="guide-card" id="guide-card">
+      <div class="guide-title">📋 Guide — que faire maintenant ?</div>
+      <div class="guide-steps" id="guide-steps">
+        <!-- rempli dynamiquement -->
+      </div>
+    </div>
 
     <!-- Stats rapides -->
     <div class="card" style="padding:16px 20px;">
@@ -47,19 +119,18 @@
       </div>
     </div>
 
-    <!-- Liste des joueurs avec leurs rôles -->
+    <!-- Liste des joueurs -->
     <div class="card">
       <h2>🎭 Joueurs et rôles</h2>
       <div id="master-player-list">
         <div class="waiting"><div class="spinner"></div><span>Chargement…</span></div>
       </div>
-
       <p style="color:var(--text3);font-size:0.8rem;font-style:italic;text-align:center;margin-top:12px;">
         Appuie sur un joueur pour l'éliminer
       </p>
     </div>
 
-    <!-- Contrôles de partie -->
+    <!-- Actions -->
     <div class="card">
       <h2>⚡ Actions</h2>
       <div class="btn-gap">
@@ -79,27 +150,7 @@
     </div>
 
     <div style="height:32px;"></div>
-
   </div>
-
-  <style>
-    .master-player {
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .master-player:hover {
-      border-color: var(--red);
-      background: rgba(192,57,43,0.08);
-    }
-    .master-player.dead {
-      opacity: 0.5;
-      cursor: default;
-    }
-    .master-player.dead:hover {
-      border-color: var(--border);
-      background: var(--bg);
-    }
-  </style>
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -107,7 +158,63 @@
   <script>
     initMaster();
 
-    // Rappel des rôles dans le bas de page
+    // ── Guide par phase ──────────────────────────────────
+    const GUIDES = {
+      night_1: [
+        { text: "Demande à tout le monde de fermer les yeux et de baisser la tête.", current: true },
+        { text: "Si Cupidon est dans la partie : « Cupidon, ouvre les yeux. Désigne tes deux amoureux. Referme les yeux. »" },
+        { text: "Si la Voyante est dans la partie : « Voyante, ouvre les yeux. Montre-moi un joueur. » → montre-lui discrètement si c'est un loup ou non. « Referme les yeux. »" },
+        { text: "« Les Loups-Garous ouvrent les yeux. » → ils se reconnaissent entre eux. « Désignez une victime. » → note le choix. « Refermez les yeux. »" },
+        { text: "Si la Sorcière est dans la partie : « Sorcière, ouvre les yeux. » → montre la victime des loups. « Potion de vie ? Potion de mort ? Referme les yeux. »" },
+        { text: "« Tout le monde ouvre les yeux. Il fait jour. »  → annonce qui a été éliminé." },
+      ],
+      night: [
+        { text: "Demande à tout le monde de fermer les yeux et de baisser la tête.", current: true },
+        { text: "Si la Voyante est vivante : « Voyante, ouvre les yeux. Désigne un joueur. » → montre son camp. « Referme les yeux. »" },
+        { text: "« Les Loups-Garous ouvrent les yeux. Désignez une victime. » → note le choix. « Refermez les yeux. »" },
+        { text: "Si la Sorcière est vivante : « Sorcière, ouvre les yeux. » → montre la victime. « Potion de vie ? Potion de mort ? Referme les yeux. »" },
+        { text: "« Tout le monde ouvre les yeux. Il fait jour. » → annonce qui a été éliminé, élimine-le dans l'app." },
+      ],
+      day: [
+        { text: "Annonce qui a été tué cette nuit (si ce n'est pas déjà fait). Élimine-le dans l'app.", current: true },
+        { text: "Lance le débat : « Qui selon vous est un Loup-Garou ? Vous avez 2-3 minutes pour convaincre. »" },
+        { text: "Organise le vote : « Levez la main pour voter contre... » → la majorité désigne le joueur éliminé." },
+        { text: "Élimine le joueur voté dans l'app, révèle son rôle à voix haute." },
+        { text: "Passe à la nuit suivante avec le bouton ci-dessous." },
+      ],
+    };
+
+    function updateGuide(phase, day) {
+      const key = (phase === 'night' && day === 1) ? 'night_1' : phase;
+      const steps = GUIDES[key] || GUIDES['day'];
+      const container = document.getElementById('guide-steps');
+      if (!container) return;
+      const isNight = phase === 'night';
+      container.innerHTML = steps.map((s, i) => `
+        <div class="guide-step ${s.current ? 'current' : ''} ${isNight ? '' : 'guide-day'}">
+          <span class="step-num">${i + 1}.</span>
+          <span>${s.text}</span>
+        </div>
+      `).join('');
+
+      // Couleur du guide selon phase
+      const card = document.getElementById('guide-card');
+      if (card) {
+        card.style.borderColor = isNight ? '#3a3a6a' : '#6a5000';
+        card.style.background = isNight ? 'rgba(10,10,30,0.9)' : 'rgba(20,15,0,0.9)';
+      }
+      const title = card?.querySelector('.guide-title');
+      if (title) title.style.color = isNight ? '#8888cc' : '#cc9900';
+    }
+
+    // Hook sur renderMaster pour mettre à jour le guide
+    const _origRenderMaster = window.renderMaster;
+    window.renderMaster = function(room) {
+      _origRenderMaster(room);
+      updateGuide(room.phase || 'night', room.day || 1);
+    };
+
+    // Rappel des rôles
     const reminder = document.getElementById('roles-reminder');
     if (reminder) {
       reminder.innerHTML = Object.entries(ROLES_DEF).map(([key, def]) => `
@@ -118,25 +225,20 @@
       `).join('');
     }
 
-    // Rendre les joueurs cliquables (élimination)
-    const origRender = window.renderMaster;
-    // Patch: after render, add click handlers
+    // Joueurs cliquables pour élimination
     const listEl = document.getElementById('master-player-list');
     const observer = new MutationObserver(() => {
       listEl.querySelectorAll('.master-player:not(.dead):not([data-click])').forEach(el => {
         el.dataset.click = '1';
         el.addEventListener('click', () => {
-          const name = el.querySelector('.mp-name').textContent;
-          if (confirm(`Éliminer ${name.trim()} ?`)) {
-            // Retrouver l'id du joueur via son nom
-            if (typeof firebase !== 'undefined') {
-              const code = sessionStorage.getItem('lgRoomCode');
-              firebase.database().ref(`rooms/${code}/players`).once('value').then(snap => {
-                const players = snap.val() || {};
-                const found = Object.values(players).find(p => p.name === name.trim());
-                if (found) eliminatePlayer(found.id);
-              });
-            }
+          const name = el.querySelector('.mp-name').textContent.trim();
+          if (confirm(`Éliminer ${name} ?`)) {
+            const code = sessionStorage.getItem('lgRoomCode');
+            firebase.database().ref(`rooms/${code}/players`).once('value').then(snap => {
+              const players = snap.val() || {};
+              const found = Object.values(players).find(p => p.name === name);
+              if (found) eliminatePlayer(found.id);
+            });
           }
         });
       });
