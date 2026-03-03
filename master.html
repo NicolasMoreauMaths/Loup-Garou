@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Meneur — Loup-Garou</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="moon"></div>
+  <div class="page" style="gap:16px;">
+
+    <!-- Header meneur -->
+    <div style="width:100%;max-width:420px;display:flex;align-items:center;gap:12px;">
+      <div style="font-size:2rem;">🐺</div>
+      <div>
+        <h1 style="font-family:'Cinzel',serif;font-size:1.3rem;color:var(--accent2);">Vue Meneur</h1>
+        <p style="color:var(--text2);font-size:0.85rem;font-style:italic;">Toi seul vois les rôles de tous.</p>
+      </div>
+    </div>
+
+    <!-- Phase actuelle -->
+    <div id="phase-banner" class="phase-banner phase-night" style="width:100%;max-width:420px;">
+      🌙 Nuit 1
+    </div>
+
+    <!-- Bannière victoire (cachée) -->
+    <div id="win-banner" class="alert alert-success hidden" style="width:100%;max-width:420px;font-size:1.1rem;padding:16px;"></div>
+
+    <!-- Stats rapides -->
+    <div class="card" style="padding:16px 20px;">
+      <div class="info-row">
+        <span class="label">👥 Joueurs vivants</span>
+        <span class="value" id="stat-alive">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">🐺 Loups vivants</span>
+        <span class="value" id="stat-wolves" style="color:var(--red2);">—</span>
+      </div>
+      <div class="info-row">
+        <span class="label">🧑‍🌾 Village vivant</span>
+        <span class="value" id="stat-village" style="color:var(--green2);">—</span>
+      </div>
+    </div>
+
+    <!-- Liste des joueurs avec leurs rôles -->
+    <div class="card">
+      <h2>🎭 Joueurs et rôles</h2>
+      <div id="master-player-list">
+        <div class="waiting"><div class="spinner"></div><span>Chargement…</span></div>
+      </div>
+
+      <p style="color:var(--text3);font-size:0.8rem;font-style:italic;text-align:center;margin-top:12px;">
+        Appuie sur un joueur pour l'éliminer
+      </p>
+    </div>
+
+    <!-- Contrôles de partie -->
+    <div class="card">
+      <h2>⚡ Actions</h2>
+      <div class="btn-gap">
+        <button class="btn btn-primary" onclick="nextPhase()">
+          🌙 Passer à la phase suivante
+        </button>
+        <button class="btn btn-danger" onclick="endGame()">
+          🏁 Terminer la partie
+        </button>
+      </div>
+    </div>
+
+    <!-- Rappel des rôles -->
+    <div class="card">
+      <h2>📖 Rappel des rôles</h2>
+      <div id="roles-reminder"></div>
+    </div>
+
+    <div style="height:32px;"></div>
+
+  </div>
+
+  <style>
+    .master-player {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .master-player:hover {
+      border-color: var(--red);
+      background: rgba(192,57,43,0.08);
+    }
+    .master-player.dead {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .master-player.dead:hover {
+      border-color: var(--border);
+      background: var(--bg);
+    }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="app.js"></script>
+  <script>
+    initMaster();
+
+    // Rappel des rôles dans le bas de page
+    const reminder = document.getElementById('roles-reminder');
+    if (reminder) {
+      reminder.innerHTML = Object.entries(ROLES_DEF).map(([key, def]) => `
+        <div class="info-row">
+          <span class="label">${def.emoji} ${def.name}</span>
+          <span style="color:var(--text3);font-size:0.85rem;font-style:italic;max-width:200px;text-align:right;">${def.desc.slice(0,60)}…</span>
+        </div>
+      `).join('');
+    }
+
+    // Rendre les joueurs cliquables (élimination)
+    const origRender = window.renderMaster;
+    // Patch: after render, add click handlers
+    const listEl = document.getElementById('master-player-list');
+    const observer = new MutationObserver(() => {
+      listEl.querySelectorAll('.master-player:not(.dead):not([data-click])').forEach(el => {
+        el.dataset.click = '1';
+        el.addEventListener('click', () => {
+          const name = el.querySelector('.mp-name').textContent;
+          if (confirm(`Éliminer ${name.trim()} ?`)) {
+            // Retrouver l'id du joueur via son nom
+            if (typeof firebase !== 'undefined') {
+              const code = sessionStorage.getItem('lgRoomCode');
+              firebase.database().ref(`rooms/${code}/players`).once('value').then(snap => {
+                const players = snap.val() || {};
+                const found = Object.values(players).find(p => p.name === name.trim());
+                if (found) eliminatePlayer(found.id);
+              });
+            }
+          }
+        });
+      });
+    });
+    observer.observe(listEl, { childList: true, subtree: true });
+  </script>
+</body>
+</html>

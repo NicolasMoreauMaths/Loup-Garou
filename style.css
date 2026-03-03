@@ -1,0 +1,562 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --card: #16161f;
+  --border: #2a2a3a;
+  --accent: #c8922a;
+  --accent2: #e8b84b;
+  --red: #c0392b;
+  --red2: #e74c3c;
+  --blue: #2980b9;
+  --blue2: #5dade2;
+  --green: #1e8449;
+  --green2: #27ae60;
+  --purple: #7d3c98;
+  --purple2: #a569bd;
+  --text: #e8e4d9;
+  --text2: #a09880;
+  --text3: #6a6050;
+  --moon: #f5e6c8;
+  --shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --glow: 0 0 20px rgba(200,146,42,0.3);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 18px;
+  overflow-x: hidden;
+}
+
+/* ── Background stars ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 50%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 90%, rgba(255,255,255,0.15) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.2) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Moon decoration ── */
+.moon {
+  position: fixed;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--moon), #d4b896 40%, #8b6914 100%);
+  box-shadow: 0 0 40px rgba(245,230,200,0.15), 0 0 80px rgba(245,230,200,0.08);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Layout ── */
+.page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 24px;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow);
+}
+
+/* ── Logo / Title ── */
+.logo {
+  text-align: center;
+}
+.logo .icon {
+  font-size: 64px;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(200,146,42,0.5));
+  animation: breathe 4s ease-in-out infinite;
+}
+.logo h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--accent2);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 30px rgba(200,146,42,0.4);
+  margin-top: 8px;
+}
+.logo .subtitle {
+  font-style: italic;
+  color: var(--text2);
+  font-size: 1rem;
+  margin-top: 4px;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 12px rgba(200,146,42,0.5)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 24px rgba(200,146,42,0.8)); }
+}
+
+/* ── Typography ── */
+h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  text-align: center;
+}
+h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  color: var(--text2);
+  letter-spacing: 0.05em;
+}
+
+/* ── Inputs ── */
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Crimson Text', serif;
+  font-size: 1.1rem;
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+}
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,146,42,0.15);
+}
+input::placeholder { color: var(--text3); }
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.input-group label {
+  font-size: 0.9rem;
+  color: var(--text2);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: 'Cinzel', serif;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+.btn:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #0a0a0f;
+  box-shadow: 0 4px 20px rgba(200,146,42,0.4);
+}
+.btn-primary:hover { box-shadow: 0 6px 28px rgba(200,146,42,0.6); }
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--red), var(--red2));
+  color: white;
+  box-shadow: 0 4px 20px rgba(192,57,43,0.4);
+}
+.btn-green {
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: white;
+  box-shadow: 0 4px 20px rgba(30,132,73,0.4);
+}
+
+.btn-sm {
+  width: auto;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
+.btn-gap { display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Divider ── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text3);
+  font-size: 0.85rem;
+  margin: 4px 0;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Code display ── */
+.code-display {
+  text-align: center;
+  padding: 20px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.code-display .code {
+  font-family: 'Cinzel', serif;
+  font-size: 2.8rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: var(--accent2);
+  text-shadow: var(--glow);
+}
+.code-display .code-label {
+  font-size: 0.8rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+}
+
+/* ── Player list ── */
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+.player-item.ready { border-color: var(--green); }
+.player-item .avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+.player-item .name { flex: 1; }
+.player-item .status {
+  font-size: 0.75rem;
+  color: var(--text3);
+}
+.player-item.ready .status { color: var(--green2); }
+.player-count {
+  text-align: center;
+  color: var(--text2);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+/* ── Role card ── */
+.role-card {
+  text-align: center;
+  padding: 36px 24px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 340px;
+  box-shadow: var(--shadow);
+}
+.role-card.wolf {
+  background: linear-gradient(160deg, #1a0505, #2d0808);
+  border: 2px solid var(--red);
+}
+.role-card.village {
+  background: linear-gradient(160deg, #051205, #0a200a);
+  border: 2px solid var(--green);
+}
+.role-card.seer {
+  background: linear-gradient(160deg, #05050a, #0d0d25);
+  border: 2px solid var(--blue);
+}
+.role-card.witch {
+  background: linear-gradient(160deg, #0f0520, #1a0535);
+  border: 2px solid var(--purple);
+}
+.role-card.hunter {
+  background: linear-gradient(160deg, #1a1005, #2a1a05);
+  border: 2px solid var(--accent);
+}
+.role-card.cupid {
+  background: linear-gradient(160deg, #1a0510, #2d0820);
+  border: 2px solid #e91e63;
+}
+.role-card .role-emoji {
+  font-size: 80px;
+  display: block;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px currentColor);
+  animation: pulse-role 2s ease-in-out infinite;
+}
+.role-card .role-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.role-card .role-desc {
+  font-style: italic;
+  color: var(--text2);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.role-card.wolf .role-name { color: var(--red2); }
+.role-card.village .role-name { color: var(--green2); }
+.role-card.seer .role-name { color: var(--blue2); }
+.role-card.witch .role-name { color: var(--purple2); }
+.role-card.hunter .role-name { color: var(--accent2); }
+.role-card.cupid .role-name { color: #f06292; }
+
+@keyframes pulse-role {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ── Role setup (master) ── */
+.roles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.role-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.role-toggle.active {
+  border-color: var(--accent);
+  background: rgba(200,146,42,0.08);
+}
+.role-toggle .re { font-size: 1.8rem; }
+.role-toggle .rn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  color: var(--text2);
+  text-align: center;
+}
+.role-toggle.active .rn { color: var(--accent2); }
+
+.role-count-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.role-count-row .rc-info { display: flex; align-items: center; gap: 10px; }
+.role-count-row .rc-emoji { font-size: 1.4rem; }
+.role-count-row .rc-name { font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--text); }
+.role-count-row .rc-controls { display: flex; align-items: center; gap: 8px; }
+.rc-btn {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.rc-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rc-count { font-family: 'Cinzel', serif; font-size: 1rem; min-width: 24px; text-align: center; color: var(--accent2); }
+
+/* ── Waiting spinner ── */
+.waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  color: var(--text2);
+  font-style: italic;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Alert / message ── */
+.alert {
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.alert-error { background: rgba(192,57,43,0.15); border: 1px solid var(--red); color: #e88; }
+.alert-info { background: rgba(41,128,185,0.15); border: 1px solid var(--blue); color: #8bf; }
+.alert-success { background: rgba(30,132,73,0.15); border: 1px solid var(--green); color: #8e8; }
+
+/* ── Badge ── */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
+}
+.badge-master { background: rgba(200,146,42,0.2); color: var(--accent2); border: 1px solid var(--accent); }
+.badge-you { background: rgba(41,128,185,0.2); color: var(--blue2); border: 1px solid var(--blue); }
+
+/* ── Info row ── */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .label { color: var(--text2); }
+.info-row .value { color: var(--text); font-weight: 600; }
+
+/* ── Master player item ── */
+.master-player {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.master-player .mp-name { flex: 1; }
+.master-player .mp-role {
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+  color: var(--accent2);
+}
+
+/* ── Tap to reveal overlay ── */
+.reveal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  gap: 20px;
+  cursor: pointer;
+}
+.reveal-overlay .tap-hint {
+  color: var(--text2);
+  font-style: italic;
+  font-size: 1rem;
+  animation: blink 2s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Hidden ── */
+.hidden { display: none !important; }
+
+/* ── Separator ── */
+.sep { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* ── Night/day phase ── */
+.phase-banner {
+  text-align: center;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+.phase-night { background: rgba(10,10,30,0.8); border: 1px solid #2a2a5a; color: #8888ff; }
+.phase-day { background: rgba(30,20,5,0.8); border: 1px solid #5a4010; color: var(--accent2); }
+
+/* ── Responsive ── */
+@media (min-width: 480px) {
+  .logo h1 { font-size: 2.8rem; }
+  .card { padding: 36px 32px; }
+}

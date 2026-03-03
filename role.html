@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Ton rôle — Loup-Garou</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="moon"></div>
+
+  <!-- Overlay "Appuie pour révéler" -->
+  <div class="reveal-overlay" id="tap-overlay">
+    <div style="font-size:80px;animation:breathe 2s ease-in-out infinite;">🤫</div>
+    <h1 style="font-family:'Cinzel',serif;color:var(--accent2);font-size:1.6rem;">Montre à personne !</h1>
+    <p style="color:var(--text2);font-style:italic;text-align:center;">Assure-toi que tes voisins<br>ne regardent pas ton écran.</p>
+    <div class="tap-hint">Appuie pour révéler ton rôle →</div>
+  </div>
+
+  <div class="page">
+
+    <div style="text-align:center;">
+      <p style="color:var(--text2);font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;font-family:'Cinzel',serif;">Ton rôle</p>
+      <h2 id="player-greeting" style="font-size:1.4rem;color:var(--text);margin-top:4px;text-transform:none;letter-spacing:0;">…</h2>
+    </div>
+
+    <div id="role-container" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+      <div class="waiting">
+        <div class="spinner"></div>
+        <span>Chargement de ton rôle…</span>
+      </div>
+    </div>
+
+    <!-- Section alliés loups (cachée par défaut) -->
+    <div class="card hidden" id="wolf-allies">
+      <h2 style="color:var(--red2);">🐺 Tes complices</h2>
+      <p style="color:var(--text2);font-style:italic;margin-bottom:12px;">Ces joueurs sont aussi des loups-garous :</p>
+      <p id="wolf-list" style="font-size:1.1rem;font-weight:600;color:var(--text);"></p>
+      <p style="color:var(--text3);font-size:0.85rem;margin-top:12px;font-style:italic;">
+        ⚠️ Ne vous faites pas de signe pendant la journée !
+      </p>
+    </div>
+
+    <div class="card" style="text-align:center;padding:20px;">
+      <p style="color:var(--text2);font-style:italic;font-size:0.95rem;">
+        🌙 La partie commence bientôt.<br>Attends les instructions du meneur.
+      </p>
+    </div>
+
+    <button class="btn btn-secondary btn-sm" onclick="history.back()" style="opacity:0.5;font-size:0.8rem;">
+      ← Retour au salon
+    </button>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="app.js"></script>
+  <script>initRole();</script>
+</body>
+</html>

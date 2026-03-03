@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Salon — Loup-Garou</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <div class="moon"></div>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="logo">
+      <div class="icon" style="font-size:40px;">🐺</div>
+      <h1 style="font-size:1.6rem;">Salle d'attente</h1>
+    </div>
+
+    <!-- Code du salon -->
+    <div class="code-display" style="width:100%;max-width:420px;">
+      <div class="code" id="room-code-display">····</div>
+      <div class="code-label">Code du salon — partage-le avec les joueurs</div>
+    </div>
+
+    <!-- Liste des joueurs -->
+    <div class="card">
+      <p class="player-count" id="player-count">Chargement…</p>
+      <div class="player-list" id="player-list">
+        <div class="waiting">
+          <div class="spinner"></div>
+          <span>En attente des joueurs…</span>
+        </div>
+      </div>
+
+      <!-- Boutons joueur normal -->
+      <div id="player-section">
+        <button class="btn btn-primary" id="btn-ready" style="margin-bottom:10px;">
+          ✅ Je suis prêt !
+        </button>
+        <button class="btn btn-secondary" id="btn-leave">
+          🚪 Quitter le salon
+        </button>
+      </div>
+    </div>
+
+    <!-- Section meneur (cachée si pas maître) -->
+    <div class="card hidden" id="master-section">
+      <h2>⚙️ Configuration des rôles</h2>
+      <div id="role-counts"></div>
+      <div id="role-balance" class="alert alert-info" style="margin-bottom:16px;">
+        Ajuste les rôles selon le nombre de joueurs.
+      </div>
+      <button class="btn btn-green" id="btn-launch">
+        🌙 Lancer la partie
+      </button>
+      <p style="color:var(--text3);font-size:0.85rem;text-align:center;margin-top:10px;font-style:italic;">
+        Tu seras redirigé vers la vue meneur. Les joueurs verront leur rôle.
+      </p>
+    </div>
+
+    <!-- Bouton quitter depuis la vue maître -->
+    <div id="master-leave" class="hidden" style="width:100%;max-width:420px;">
+      <button class="btn btn-secondary" id="btn-leave-master">
+        🚪 Quitter (et fermer le salon)
+      </button>
+    </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="app.js"></script>
+  <script>
+    initLobby();
+
+    // Masquer bouton ready pour le maître, afficher bouton quitter maître
+    if (sessionStorage.getItem('lgIsMaster') === 'true') {
+      document.getElementById('player-section').classList.add('hidden');
+      document.getElementById('master-leave').classList.remove('hidden');
+      document.getElementById('btn-leave-master').addEventListener('click', async () => {
+        if (confirm("Fermer le salon pour tout le monde ?")) {
+          const { initFirebase } = window;
+          if (typeof firebase !== 'undefined' && firebase.apps.length) {
+            const code = sessionStorage.getItem('lgRoomCode');
+            await firebase.database().ref(`rooms/${code}`).update({ status: 'ended' });
+          }
+          sessionStorage.clear();
+          window.location.href = 'index.html';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
