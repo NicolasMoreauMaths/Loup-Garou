@@ -298,7 +298,7 @@ async function createRoom(name) {
       status: 'lobby',
       master: id,
       createdAt: Date.now(),
-      roles: { wolf: 1, village: 0, seer: 0, witch: 0, hunter: 0, cupid: 0 },
+      roles: Object.fromEntries(Object.keys(ROLES_DEF).map(k => [k, k === 'wolf' ? 1 : 0])),
       players: { [id]: player }
     });
 
