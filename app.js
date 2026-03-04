@@ -44,7 +44,7 @@ const ROLE_CATEGORIES = [
   {
     id: 'wolves',
     label: '🐺 Variantes de Loups',
-    desc: 'Remplacent ou s'ajoutent aux loups classiques.',
+    desc: "Remplacent ou s'ajoutent aux loups classiques.",
     roles: ['big_bad_wolf','ancient_wolf','wolf_father','infected_father','wolf_shaman']
   }
 ];
