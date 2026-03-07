@@ -97,7 +97,27 @@
       <div class="reveal-desc" id="dead-role-desc"></div>
     </div>
     <div class="dead-spectator">Tu restes spectateur jusqu'à la fin de la partie.<br>Chut, ne révèle pas ton rôle ! 🤫</div>
+    <button id="dead-dismiss-btn" class="btn btn-secondary hidden" style="max-width:260px;">
+      Compris ✓ — passer le téléphone
+    </button>
   </div>
+
+  <!-- Overlay sélecteur de joueur (mode 2 joueurs sur 1 appareil) -->
+  <div class="reveal-overlay hidden" id="dual-selector" style="gap:32px;">
+    <div style="font-size:3rem;">📱</div>
+    <div style="font-family:'Cinzel',serif;font-size:1.1rem;color:var(--accent2);letter-spacing:0.06em;text-align:center;">
+      À qui est ce téléphone ?
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;width:100%;max-width:300px;">
+      <button class="btn btn-primary" id="dual-btn-p1">Joueur 1</button>
+      <button class="btn btn-secondary" id="dual-btn-p2">Joueur 2</button>
+    </div>
+  </div>
+
+  <!-- Bouton "Passer le téléphone" visible après révélation (mode 2 joueurs) -->
+  <button id="btn-pass-phone" class="btn btn-secondary hidden" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);width:calc(100% - 48px);max-width:380px;z-index:50;background:rgba(10,10,20,0.95);backdrop-filter:blur(4px);border-color:var(--accent);">
+    🔒 Masquer mon rôle — passer le téléphone
+  </button>
 
   <!-- Overlay "Appuie pour révéler" -->
   <div class="reveal-overlay" id="tap-overlay">
@@ -147,7 +167,9 @@
   <script src="app.js"></script>
   <script>
     initRole();
-    watchElimination();
+    watchElimination(); // joueur 1
+    const _p2id = sessionStorage.getItem('lgPlayerId2');
+    if (_p2id) watchElimination(_p2id); // joueur 2 (mode 2-sur-1)
   </script>
 </body>
 </html>

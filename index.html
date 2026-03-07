@@ -46,6 +46,27 @@
           ✨ Créer un salon
         </button>
       </div>
+
+      <div class="sep"></div>
+
+      <!-- Option 2 joueurs sur 1 appareil -->
+      <div style="text-align:center;margin-bottom:6px;">
+        <button type="button" id="btn-toggle-p2" style="background:none;border:none;color:var(--text3);font-size:0.9rem;cursor:pointer;font-family:'Crimson Text',serif;text-decoration:underline;padding:4px 0;" onclick="
+          const sec = document.getElementById('p2-section');
+          const hidden = sec.classList.toggle('hidden');
+          this.textContent = hidden ? '👥 Nous sommes 2 sur cet appareil' : '👤 Un seul joueur sur cet appareil';
+          if (hidden) document.getElementById('player-name-2').value = '';
+        ">👥 Nous sommes 2 sur cet appareil</button>
+      </div>
+      <div id="p2-section" class="hidden">
+        <div class="input-group" style="margin-bottom:0;">
+          <label for="player-name-2">Prénom du 2e joueur</label>
+          <input type="text" id="player-name-2" placeholder="Entre son prénom…" maxlength="20" autocomplete="off" autocorrect="off">
+        </div>
+        <p style="color:var(--text3);font-size:0.8rem;font-style:italic;text-align:center;margin-top:8px;">
+          Chaque joueur verra son rôle en privé, l'un après l'autre.
+        </p>
+      </div>
     </div>
 
     <p style="color:var(--text3);font-size:0.8rem;text-align:center;font-style:italic;">
