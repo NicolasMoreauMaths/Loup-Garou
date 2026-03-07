@@ -468,7 +468,8 @@ function renderLobby(room) {
 function renderRoleConfig(room, players) {
   const roles = room.roles || {};
   const totalRoles = Object.values(roles).reduce((a,b) => a+b, 0);
-  const playerCount = players.length;
+  // Le meneur ne reçoit pas de rôle → on l'exclut du comptage
+  const playerCount = players.filter(p => !p.master).length;
   const balanceEl = document.getElementById('role-balance');
 
   if (balanceEl) {
@@ -563,12 +564,14 @@ window.changeRole = async function(key, delta) {
 async function launchGame() {
   const snap = await gameRef.once('value');
   const room = snap.val();
-  const players = room.players ? Object.values(room.players) : [];
+  const allPlayers = room.players ? Object.values(room.players) : [];
+  // Le meneur (narrateur) ne reçoit pas de rôle — on l'exclut
+  const players = allPlayers.filter(p => !p.master);
   const roles = room.roles || {};
   const totalRoles = Object.values(roles).reduce((a,b) => a+b, 0);
 
-  if (players.length < 3) {
-    alert("Il faut au moins 3 joueurs pour commencer !"); return;
+  if (players.length < 2) {
+    alert("Il faut au moins 2 joueurs (hors meneur) pour commencer !"); return;
   }
   if (totalRoles !== players.length) {
     alert(`Le nombre de rôles (${totalRoles}) ne correspond pas au nombre de joueurs (${players.length}). Ajuste la configuration.`); return;
@@ -581,7 +584,7 @@ async function launchGame() {
   });
   roleList = shuffle(roleList);
 
-  // Assigner les rôles
+  // Assigner les rôles aux joueurs non-maîtres uniquement
   const updates = {};
   players.forEach((p, i) => {
     updates[`rooms/${roomCode}/players/${p.id}/role`] = roleList[i];
@@ -784,25 +787,28 @@ function renderMaster(room) {
     list.innerHTML = players.map(p => {
       const def = ROLES_DEF[p.role] || {};
       const isDead = p.alive === false;
-      const teamClass = isWolfRole(p.role) ? 'team-wolf' : (def.team === 'solo' ? 'team-solo' : 'team-village');
+      const isMasterPlayer = !!p.master;
+      const teamClass = isMasterPlayer ? '' : isWolfRole(p.role) ? 'team-wolf' : (def.team === 'solo' ? 'team-solo' : 'team-village');
       return `
         <div class="master-player ${isDead ? 'dead' : ''} ${teamClass}" data-pid="${p.id}">
           <div class="mp-ava${isDead ? ' mp-dead' : ''}">${p.avatar}</div>
           <div class="mp-details">
-            <div class="mp-name">${escHtml(p.name)}</div>
-            <div class="mp-role">${def.emoji || ''} ${def.name || p.role || ''}</div>
+            <div class="mp-name">${escHtml(p.name)}${isMasterPlayer ? ' <span class="badge badge-master" style="font-size:0.65rem;">Narrateur</span>' : ''}</div>
+            <div class="mp-role">${isMasterPlayer ? '🎙️ Meneur de jeu' : (def.emoji || '') + ' ' + (def.name || p.role || '')}</div>
           </div>
-          ${isDead
-            ? '<div class="mp-dead-tag">☠️</div>'
-            : `<button class="mp-elim-btn" data-pid="${p.id}" data-name="${escHtml(p.name)}" title="Éliminer ${escHtml(p.name)}">☠️</button>`
+          ${isMasterPlayer
+            ? ''
+            : isDead
+              ? '<div class="mp-dead-tag">☠️</div>'
+              : `<button class="mp-elim-btn" data-pid="${p.id}" data-name="${escHtml(p.name)}" title="Éliminer ${escHtml(p.name)}">☠️</button>`
           }
         </div>
       `;
     }).join('');
   }
 
-  // Stats — tous les rôles loups comptent (variantes incluses)
-  const alive = players.filter(p => p.alive !== false);
+  // Stats — exclure le meneur, tous les rôles loups comptent (variantes incluses)
+  const alive = players.filter(p => p.alive !== false && !p.master);
   const wolves = alive.filter(p => isWolfRole(p.role));
   const villagers = alive.filter(p => !isWolfRole(p.role) && ROLES_DEF[p.role]?.team !== 'solo');
   document.getElementById('stat-alive').textContent = alive.length;
