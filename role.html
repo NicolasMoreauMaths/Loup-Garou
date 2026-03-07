@@ -114,6 +114,9 @@
       <h2 id="player-greeting" style="font-size:1.4rem;color:var(--text);margin-top:4px;text-transform:none;letter-spacing:0;">…</h2>
     </div>
 
+    <!-- Indicateur de phase (nuit/jour), mis à jour en temps réel -->
+    <div id="phase-indicator" class="phase-indicator phase-night" style="width:100%;max-width:420px;">🌙 Nuit 1</div>
+
     <div id="role-container" style="width:100%;display:flex;flex-direction:column;align-items:center;">
       <div class="waiting">
         <div class="spinner"></div>
@@ -122,17 +125,18 @@
     </div>
 
     <div class="card hidden" id="wolf-allies">
-      <h2 style="color:var(--red2);">🐺 Tes complices</h2>
-      <p style="color:var(--text2);font-style:italic;margin-bottom:12px;">Ces joueurs sont aussi des loups-garous :</p>
+      <h2 style="color:var(--red2);">🐺 Tes complices loups</h2>
+      <p style="color:var(--text2);font-style:italic;margin-bottom:12px;">Ces joueurs font partie du camp des loups :</p>
       <p id="wolf-list" style="font-size:1.1rem;font-weight:600;color:var(--text);"></p>
       <p style="color:var(--text3);font-size:0.85rem;margin-top:12px;font-style:italic;">
-        ⚠️ Ne vous faites pas de signe pendant la journée !
+        ⚠️ Ne vous faites aucun signe pendant la journée !
       </p>
     </div>
 
     <div class="card" style="text-align:center;padding:20px;">
       <p style="color:var(--text2);font-style:italic;font-size:0.95rem;">
-        🌙 La partie commence bientôt.<br>Attends les instructions du meneur.
+        Attends les instructions du meneur.<br>
+        <span style="font-size:0.85rem;color:var(--text3);">L'indicateur de phase ci-dessus se met à jour automatiquement.</span>
       </p>
     </div>
 
