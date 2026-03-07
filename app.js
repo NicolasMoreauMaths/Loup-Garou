@@ -267,23 +267,27 @@ function initHome() {
 
   document.getElementById('btn-create').addEventListener('click', async () => {
     const name = document.getElementById('player-name').value.trim();
+    const name2 = document.getElementById('player-name-2')?.value.trim() || null;
     if (!name) { showError("Entre ton prénom d'abord !"); return; }
+    if (name2 && name2 === name) { showError("Les deux joueurs doivent avoir des prénoms différents."); return; }
     hideError();
     const btn = document.getElementById('btn-create');
     btn.disabled = true; btn.textContent = '⏳ Création…';
-    await createRoom(name);
+    await createRoom(name, name2);
     btn.disabled = false; btn.textContent = '✨ Créer un salon';
   });
 
   document.getElementById('btn-join').addEventListener('click', async () => {
     const name = document.getElementById('player-name').value.trim();
     const code = document.getElementById('room-code').value.trim().toUpperCase();
+    const name2 = document.getElementById('player-name-2')?.value.trim() || null;
     if (!name) { showError("Entre ton prénom d'abord !"); return; }
     if (!code || code.length !== 4) { showError("Entre un code de salon valide (4 lettres)."); return; }
+    if (name2 && name2 === name) { showError("Les deux joueurs doivent avoir des prénoms différents."); return; }
     hideError();
     const btn = document.getElementById('btn-join');
     btn.disabled = true; btn.textContent = '⏳ Connexion…';
-    await joinRoom(name, code);
+    await joinRoom(name, code, name2);
     btn.disabled = false; btn.textContent = '🚪 Rejoindre le salon';
   });
 
@@ -302,26 +306,32 @@ function initHome() {
   });
 }
 
-async function createRoom(name) {
+async function createRoom(name, name2 = null) {
   const code = generateCode();
   const id = generateId();
-  const avatar = randomAvatar();
 
   try {
     // Vérif que le code n'existe pas déjà
     const snap = await db.ref(`rooms/${code}`).once('value');
     if (snap.exists() && snap.val().status !== 'ended') {
-      await createRoom(name); return; // réessai avec un nouveau code
+      await createRoom(name, name2); return; // réessai avec un nouveau code
     }
 
-    const player = { id, name, avatar, ready: false, master: true };
+    const players = { [id]: { id, name, avatar: randomAvatar(), ready: false, master: true } };
+    if (name2) {
+      const id2 = generateId();
+      players[id2] = { id: id2, name: name2, avatar: randomAvatar(), ready: false, master: false };
+      sessionStorage.setItem('lgPlayerId2', id2);
+      sessionStorage.setItem('lgPlayerName2', name2);
+    }
+
     await db.ref(`rooms/${code}`).set({
       code,
       status: 'lobby',
       master: id,
       createdAt: Date.now(),
       roles: Object.fromEntries(Object.keys(ROLES_DEF).map(k => [k, k === 'wolf' ? 1 : 0])),
-      players: { [id]: player }
+      players
     });
 
     sessionStorage.setItem('lgPlayerId', id);
@@ -334,7 +344,7 @@ async function createRoom(name) {
   }
 }
 
-async function joinRoom(name, code) {
+async function joinRoom(name, code, name2 = null) {
   try {
     const snap = await db.ref(`rooms/${code}`).once('value');
     if (!snap.exists()) { showError("Salon introuvable. Vérifie le code."); return; }
@@ -342,9 +352,14 @@ async function joinRoom(name, code) {
     if (room.status !== 'lobby') { showError("La partie a déjà commencé !"); return; }
 
     const id = generateId();
-    const avatar = randomAvatar();
-    const player = { id, name, avatar, ready: false, master: false };
-    await db.ref(`rooms/${code}/players/${id}`).set(player);
+    await db.ref(`rooms/${code}/players/${id}`).set({ id, name, avatar: randomAvatar(), ready: false, master: false });
+
+    if (name2) {
+      const id2 = generateId();
+      await db.ref(`rooms/${code}/players/${id2}`).set({ id: id2, name: name2, avatar: randomAvatar(), ready: false, master: false });
+      sessionStorage.setItem('lgPlayerId2', id2);
+      sessionStorage.setItem('lgPlayerName2', name2);
+    }
 
     sessionStorage.setItem('lgPlayerId', id);
     sessionStorage.setItem('lgPlayerName', name);
@@ -390,19 +405,25 @@ function initLobby() {
     }
   });
 
-  // Bouton "Je suis prêt"
+  // Bouton "Je suis prêt" — marque les deux joueurs si mode 2-sur-1
   const btnReady = document.getElementById('btn-ready');
   if (btnReady) {
     btnReady.addEventListener('click', async () => {
       const snap = await playersRef.child(myId).once('value');
       const cur = snap.val();
-      await playersRef.child(myId).update({ ready: !cur.ready });
+      const newReady = !cur.ready;
+      const updates = { [`${myId}/ready`]: newReady };
+      const myId2 = sessionStorage.getItem('lgPlayerId2');
+      if (myId2) updates[`${myId2}/ready`] = newReady;
+      await playersRef.update(updates);
     });
   }
 
-  // Bouton quitter
+  // Bouton quitter — retire les deux joueurs si mode 2-sur-1
   document.getElementById('btn-leave')?.addEventListener('click', async () => {
+    const myId2 = sessionStorage.getItem('lgPlayerId2');
     await playersRef.child(myId).remove();
+    if (myId2) await playersRef.child(myId2).remove();
     sessionStorage.clear();
     window.location.href = 'index.html';
   });
@@ -420,11 +441,12 @@ function renderLobby(room) {
 
   if (count) count.textContent = `${players.length} joueur${players.length > 1 ? 's' : ''} dans le salon`;
 
+  const localId2 = sessionStorage.getItem('lgPlayerId2');
   if (list) {
     list.innerHTML = players.map(p => `
       <div class="player-item ${p.ready ? 'ready' : ''}">
         <div class="avatar">${p.avatar}</div>
-        <div class="name">${escHtml(p.name)}${p.id === myId ? ' <span class="badge badge-you">Toi</span>' : ''}${p.master ? ' <span class="badge badge-master">Meneur</span>' : ''}</div>
+        <div class="name">${escHtml(p.name)}${(p.id === myId || p.id === localId2) ? ' <span class="badge badge-you">Toi</span>' : ''}${p.master ? ' <span class="badge badge-master">Meneur</span>' : ''}</div>
         <div class="status">${p.ready ? '✓ Prêt' : 'En attente'}</div>
       </div>
     `).join('');
@@ -589,6 +611,7 @@ function initRole() {
 
   myId = sessionStorage.getItem('lgPlayerId');
   roomCode = sessionStorage.getItem('lgRoomCode');
+  const myId2 = sessionStorage.getItem('lgPlayerId2');
   if (!myId || !roomCode) { window.location.href = 'index.html'; return; }
 
   // Empêche l'écran de s'éteindre pendant la partie
@@ -602,7 +625,7 @@ function initRole() {
   }
 
   gameRef = db.ref(`rooms/${roomCode}`);
-  let roleLoaded = false;
+  let rolesLoaded = false;
 
   gameRef.on('value', snap => {
     const room = snap.val();
@@ -626,13 +649,63 @@ function initRole() {
     updatePhaseIndicator(room.phase || 'night', room.day || 1);
 
     if (!me.role) return;
+    // Mode 2-sur-1 : attendre que les deux rôles soient attribués
+    if (myId2 && !players[myId2]?.role) return;
 
-    // Afficher la carte de rôle une seule fois
-    if (!roleLoaded) {
-      roleLoaded = true;
-      renderRoleCard(me, room);
+    // Afficher les rôles une seule fois
+    if (!rolesLoaded) {
+      rolesLoaded = true;
+      if (myId2 && players[myId2]) {
+        initRoleDual(me, players[myId2], room);
+      } else {
+        renderRoleCard(me, room);
+      }
     }
   });
+}
+
+// ══════════════════════════════════════════════════════
+//  Mode 2 joueurs sur 1 appareil
+// ══════════════════════════════════════════════════════
+function initRoleDual(p1, p2, room) {
+  const selector = document.getElementById('dual-selector');
+  if (!selector) { renderRoleCard(p1, room); return; }
+
+  const btnP1 = document.getElementById('dual-btn-p1');
+  const btnP2 = document.getElementById('dual-btn-p2');
+  const passBtn = document.getElementById('btn-pass-phone');
+
+  btnP1.textContent = `${p1.avatar} ${p1.name}`;
+  btnP2.textContent = `${p2.avatar} ${p2.name}`;
+  selector.classList.remove('hidden');
+
+  function showRole(player) {
+    selector.classList.add('hidden');
+    // Réinitialise les complices de la session précédente
+    const wolfSection = document.getElementById('wolf-allies');
+    if (wolfSection) wolfSection.classList.add('hidden');
+    // Affiche la carte (inclut l'overlay tap-to-reveal)
+    renderRoleCard(player, room);
+    // Dès que l'overlay tap est levé, affiche le bouton "passer"
+    document.getElementById('tap-overlay').addEventListener('click', () => {
+      setTimeout(() => { if (passBtn) passBtn.classList.remove('hidden'); }, 60);
+    }, { once: true });
+  }
+
+  btnP1.addEventListener('click', () => showRole(p1));
+  btnP2.addEventListener('click', () => showRole(p2));
+
+  if (passBtn) {
+    passBtn.addEventListener('click', () => {
+      passBtn.classList.add('hidden');
+      const container = document.getElementById('role-container');
+      if (container) container.innerHTML = '';
+      document.getElementById('player-greeting').textContent = '…';
+      const wolfSection = document.getElementById('wolf-allies');
+      if (wolfSection) wolfSection.classList.add('hidden');
+      selector.classList.remove('hidden');
+    });
+  }
 }
 
 function renderRoleCard(player, room) {
@@ -801,8 +874,8 @@ function setupPresence() {
 // ══════════════════════════════════════════════════════
 //  Surveillance élimination (page role.html)
 // ══════════════════════════════════════════════════════
-function watchElimination() {
-  const id = sessionStorage.getItem('lgPlayerId');
+function watchElimination(targetId) {
+  const id = targetId || sessionStorage.getItem('lgPlayerId');
   const code = sessionStorage.getItem('lgRoomCode');
   if (!id || !code || typeof firebase === 'undefined') return;
 
@@ -815,9 +888,14 @@ function watchElimination() {
   });
 }
 
+// Ensemble pour éviter de réafficher un écran mort déjà vu (important en mode 2-sur-1)
+const _shownDeadFor = new Set();
+
 function showDeadScreen(player) {
+  if (_shownDeadFor.has(player.id)) return;
   const overlay = document.getElementById('dead-overlay');
-  if (!overlay || !overlay.classList.contains('hidden')) return; // déjà affiché
+  if (!overlay) return;
+  _shownDeadFor.add(player.id);
 
   const def = ROLES_DEF[player.role] || ROLES_DEF['village'];
 
@@ -829,6 +907,26 @@ function showDeadScreen(player) {
   // Cache l'overlay "tap to reveal" si encore visible
   const tapOverlay = document.getElementById('tap-overlay');
   if (tapOverlay) tapOverlay.classList.add('hidden');
+
+  // En mode 2-sur-1 : le bouton "Compris" retourne au sélecteur pour l'autre joueur
+  const dismissBtn = document.getElementById('dead-dismiss-btn');
+  if (dismissBtn) {
+    dismissBtn.classList.remove('hidden');
+    dismissBtn.onclick = () => {
+      overlay.classList.add('hidden');
+      const passBtn = document.getElementById('btn-pass-phone');
+      if (passBtn) passBtn.classList.add('hidden');
+      const dualSelector = document.getElementById('dual-selector');
+      if (dualSelector && sessionStorage.getItem('lgPlayerId2')) {
+        const container = document.getElementById('role-container');
+        if (container) container.innerHTML = '';
+        document.getElementById('player-greeting').textContent = '…';
+        const wolfSection = document.getElementById('wolf-allies');
+        if (wolfSection) wolfSection.classList.add('hidden');
+        dualSelector.classList.remove('hidden');
+      }
+    };
+  }
 
   overlay.classList.remove('hidden');
 }
