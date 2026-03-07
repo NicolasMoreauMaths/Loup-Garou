@@ -1,5 +1,5 @@
 // Service Worker — Loup-Garou PWA
-const CACHE = 'loupgarou-v1';
+const CACHE = 'loupgarou-v2';
 const ASSETS = [
   '/',
   '/index.html',
