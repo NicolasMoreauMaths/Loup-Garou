@@ -123,22 +123,6 @@ loupgarou/
 Sur **iPhone** : Safari → partager → "Sur l'écran d'accueil"  
 Sur **Android** : Chrome → menu ⋮ → "Ajouter à l'écran d'accueil"
 
----
-
-## 🔒 Règles de sécurité Firebase (optionnel)
-
-Pour protéger ta base après les 30 jours de mode test :
-
-```json
-{
-  "rules": {
-    "rooms": {
-      "$roomCode": {
-        ".read": true,
-        ".write": true
-      }
-    }
-  }
 }
 ```
 
