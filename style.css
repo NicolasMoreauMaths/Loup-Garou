@@ -555,6 +555,60 @@ input::placeholder { color: var(--text3); }
 .phase-night { background: rgba(10,10,30,0.8); border: 1px solid #2a2a5a; color: #8888ff; }
 .phase-day { background: rgba(30,20,5,0.8); border: 1px solid #5a4010; color: var(--accent2); }
 
+/* ── Master player — couleurs d'équipe ── */
+.master-player.team-wolf  { border-left: 3px solid var(--red); }
+.master-player.team-village { border-left: 3px solid var(--green); }
+.master-player.team-solo  { border-left: 3px solid #e91e63; }
+
+.mp-ava {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+.mp-ava.mp-dead { opacity: 0.3; filter: grayscale(1); }
+.mp-details { flex: 1; min-width: 0; }
+.mp-dead-tag { color: var(--text3); font-size: 1rem; }
+
+.mp-elim-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text3);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.mp-elim-btn:hover {
+  border-color: var(--red);
+  color: var(--red2);
+  background: rgba(192,57,43,0.12);
+}
+
+/* ── Indicateur de phase (page joueur) ── */
+.phase-indicator {
+  font-family: 'Cinzel', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 10px 20px;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.4s ease;
+}
+.phase-indicator.phase-night {
+  background: rgba(10,10,30,0.85);
+  border: 1px solid #2a2a5a;
+  color: #9999ff;
+}
+.phase-indicator.phase-day {
+  background: rgba(30,20,5,0.85);
+  border: 1px solid #5a4010;
+  color: var(--accent2);
+}
+
 /* ── Responsive ── */
 @media (min-width: 480px) {
   .logo h1 { font-size: 2.8rem; }

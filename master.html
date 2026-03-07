@@ -158,35 +158,88 @@
   <script>
     initMaster();
 
-    // ── Guide par phase ──────────────────────────────────
-    const GUIDES = {
-      night_1: [
-        { text: "Demande à tout le monde de fermer les yeux et de baisser la tête.", current: true },
-        { text: "Si Cupidon est dans la partie : « Cupidon, ouvre les yeux. Désigne tes deux amoureux. Referme les yeux. »" },
-        { text: "Si la Voyante est dans la partie : « Voyante, ouvre les yeux. Montre-moi un joueur. » → montre-lui discrètement si c'est un loup ou non. « Referme les yeux. »" },
-        { text: "« Les Loups-Garous ouvrent les yeux. » → ils se reconnaissent entre eux. « Désignez une victime. » → note le choix. « Refermez les yeux. »" },
-        { text: "Si la Sorcière est dans la partie : « Sorcière, ouvre les yeux. » → montre la victime des loups. « Potion de vie ? Potion de mort ? Referme les yeux. »" },
-        { text: "« Tout le monde ouvre les yeux. Il fait jour. »  → annonce qui a été éliminé." },
-      ],
-      night: [
-        { text: "Demande à tout le monde de fermer les yeux et de baisser la tête.", current: true },
-        { text: "Si la Voyante est vivante : « Voyante, ouvre les yeux. Désigne un joueur. » → montre son camp. « Referme les yeux. »" },
-        { text: "« Les Loups-Garous ouvrent les yeux. Désignez une victime. » → note le choix. « Refermez les yeux. »" },
-        { text: "Si la Sorcière est vivante : « Sorcière, ouvre les yeux. » → montre la victime. « Potion de vie ? Potion de mort ? Referme les yeux. »" },
-        { text: "« Tout le monde ouvre les yeux. Il fait jour. » → annonce qui a été éliminé, élimine-le dans l'app." },
-      ],
-      day: [
-        { text: "Annonce qui a été tué cette nuit (si ce n'est pas déjà fait). Élimine-le dans l'app.", current: true },
-        { text: "Lance le débat : « Qui selon vous est un Loup-Garou ? Vous avez 2-3 minutes pour convaincre. »" },
-        { text: "Organise le vote : « Levez la main pour voter contre... » → la majorité désigne le joueur éliminé." },
-        { text: "Élimine le joueur voté dans l'app, révèle son rôle à voix haute." },
-        { text: "Passe à la nuit suivante avec le bouton ci-dessous." },
-      ],
-    };
+    // ── Guide dynamique basé sur les rôles réellement actifs ─────
+    function buildGuideSteps(room) {
+      const phase = room.phase || 'night';
+      const day = room.day || 1;
+      const players = room.players ? Object.values(room.players) : [];
+      const aliveRoles = new Set(players.filter(p => p.alive !== false && p.role).map(p => p.role));
+      const has = role => aliveRoles.has(role);
 
-    function updateGuide(phase, day) {
-      const key = (phase === 'night' && day === 1) ? 'night_1' : phase;
-      const steps = GUIDES[key] || GUIDES['day'];
+      if (phase === 'night') {
+        const steps = [
+          { text: "Demande à tout le monde de fermer les yeux et de baisser la tête.", current: true },
+        ];
+
+        // Nuit 1 uniquement
+        if (day === 1) {
+          if (has('cupid'))
+            steps.push({ text: "💘 Cupidon : « Ouvre les yeux. Désigne tes deux amoureux en silence. Referme les yeux. »" });
+          if (has('wild_child'))
+            steps.push({ text: "🌿 Enfant Sauvage : « Ouvre les yeux. Désigne ton modèle en silence. Referme les yeux. »" });
+          if (has('wolf_dog'))
+            steps.push({ text: "🐕 Chien-Loup : « Ouvre les yeux. Choisis ton camp : 👍 village ou 👎 loup. Referme les yeux. »" });
+          if (has('actor'))
+            steps.push({ text: "🎭 Comédien : « Ouvre les yeux. Désigne une carte parmi les 3 proposées. Referme les yeux. »" });
+        }
+
+        if (has('seer'))
+          steps.push({ text: "🔮 Voyante : « Ouvre les yeux. Désigne un joueur. » → 👍 village / 👎 loup. « Referme les yeux. »" });
+
+        if (has('fox'))
+          steps.push({ text: "🦊 Renard : « Ouvre les yeux. Désigne 3 joueurs consécutifs. » → Oui si loup parmi eux, non sinon (il perd son pouvoir si non). « Referme les yeux. »" });
+
+        const wolfPlayers = players.filter(p => p.alive !== false && isWolfRole(p.role));
+        if (wolfPlayers.length > 0)
+          steps.push({ text: "🐺 Loups : « Loups-Garous, ouvrez les yeux. Reconnaissez-vous. Désignez une victime en silence. » → Mémorise le choix. « Refermez les yeux. »" });
+
+        if (has('big_bad_wolf'))
+          steps.push({ text: "😈 Grand Méchant Loup : peut désigner une 2e victime supplémentaire si aucun loup n'a encore été éliminé." });
+
+        if (has('healer'))
+          steps.push({ text: "🛡️ Salvateur : « Ouvre les yeux. Désigne un joueur à protéger cette nuit (pas le même qu'hier). Referme les yeux. »" });
+
+        if (has('witch'))
+          steps.push({ text: "🧙‍♀️ Sorcière : « Ouvre les yeux. » → Montre-lui la victime. « Potion de vie ? (👍) Potion de mort ? (désigne quelqu'un) Referme les yeux. »" });
+
+        if (has('pyromaniac'))
+          steps.push({ text: "🔥 Pyromane : « Ouvre les yeux. Désigne un joueur à asperger, OU craque l'allumette pour tuer tous les aspergés. Referme les yeux. »" });
+
+        if (has('little_girl'))
+          steps.push({ text: "⚠️ La Petite Fille peut espionner les loups. Si un loup la signale, elle est éliminée à la place de la victime prévue." });
+
+        steps.push({ text: "« Tout le monde ouvre les yeux. Il fait jour. » → Annonce les éliminés et clique sur leur nom dans l'app." });
+        return steps;
+
+      } else {
+        // Journée
+        const steps = [
+          { text: "Annonce les victimes de la nuit. Clique sur ☠️ à côté de leur nom pour les éliminer.", current: true },
+        ];
+
+        if (has('bear'))
+          steps.push({ text: "🐻 Montreur d'Ours : grogne si l'un de ses voisins immédiats (gauche ou droite) est un loup." });
+
+        steps.push({ text: "Lance le débat : « Qui soupçonnez-vous d'être un Loup-Garou ? Vous avez quelques minutes pour argumenter. »" });
+
+        if (has('hunter'))
+          steps.push({ text: "⚠️ Si le Chasseur est éliminé : il désigne immédiatement sa cible à voix haute → clique aussi sur ☠️ pour cette cible." });
+
+        if (has('stuttering_judge'))
+          steps.push({ text: "⚠️ Le Juge Bègue peut faire son signe secret convenu pour provoquer un 2e vote." });
+
+        if (has('devoted_servant'))
+          steps.push({ text: "⚠️ La Servante Dévouée peut révéler sa carte avant l'élimination pour prendre la place du joueur voté." });
+
+        steps.push({ text: "Vote : « Levez la main pour voter contre... » → La majorité l'emporte. Clique sur ☠️ pour le joueur voté et révèle son rôle à voix haute." });
+        steps.push({ text: "Passe à la nuit suivante avec le bouton « Phase suivante »." });
+        return steps;
+      }
+    }
+
+    function updateGuide(room) {
+      const phase = room.phase || 'night';
+      const steps = buildGuideSteps(room);
       const container = document.getElementById('guide-steps');
       if (!container) return;
       const isNight = phase === 'night';
@@ -197,7 +250,6 @@
         </div>
       `).join('');
 
-      // Couleur du guide selon phase
       const card = document.getElementById('guide-card');
       if (card) {
         card.style.borderColor = isNight ? '#3a3a6a' : '#6a5000';
@@ -207,43 +259,47 @@
       if (title) title.style.color = isNight ? '#8888cc' : '#cc9900';
     }
 
-    // Hook sur renderMaster pour mettre à jour le guide
+    // Hook sur renderMaster pour mettre à jour le guide et le rappel des rôles
+    let reminderBuilt = false;
     const _origRenderMaster = window.renderMaster;
     window.renderMaster = function(room) {
       _origRenderMaster(room);
-      updateGuide(room.phase || 'night', room.day || 1);
+      updateGuide(room);
+
+      // Rappel des rôles : uniquement les rôles actifs dans cette partie (construit une seule fois)
+      if (!reminderBuilt && room.roles) {
+        const activeKeys = Object.entries(room.roles).filter(([, v]) => v > 0).map(([k]) => k);
+        const reminder = document.getElementById('roles-reminder');
+        if (reminder && activeKeys.length > 0) {
+          reminderBuilt = true;
+          reminder.innerHTML = activeKeys.map(key => {
+            const def = ROLES_DEF[key];
+            if (!def) return '';
+            return `
+              <div class="info-row" onclick="this.querySelector('.rr-master').classList.toggle('hidden')" style="flex-direction:column;align-items:flex-start;cursor:pointer;gap:4px;">
+                <div style="display:flex;align-items:center;gap:8px;width:100%;">
+                  <span>${def.emoji} <strong style="font-family:'Cinzel',serif;font-size:0.85rem;">${def.name}</strong></span>
+                  <span style="color:var(--text3);font-size:0.75rem;margin-left:auto;">▼ meneur</span>
+                </div>
+                <div class="rr-master hidden" style="font-size:0.82rem;color:#8888cc;padding:6px 8px;background:rgba(100,100,200,0.08);border-radius:8px;width:100%;line-height:1.4;">${def.master}</div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
     };
 
-    // Rappel des rôles
-    const reminder = document.getElementById('roles-reminder');
-    if (reminder) {
-      reminder.innerHTML = Object.entries(ROLES_DEF).map(([key, def]) => `
-        <div class="info-row">
-          <span class="label">${def.emoji} ${def.name}</span>
-          <span style="color:var(--text3);font-size:0.85rem;font-style:italic;max-width:200px;text-align:right;">${def.desc.slice(0,60)}…</span>
-        </div>
-      `).join('');
-    }
-
-    // Joueurs cliquables pour élimination
+    // Boutons d'élimination dans la liste des joueurs (via délégation d'événements)
     const listEl = document.getElementById('master-player-list');
-    const observer = new MutationObserver(() => {
-      listEl.querySelectorAll('.master-player:not(.dead):not([data-click])').forEach(el => {
-        el.dataset.click = '1';
-        el.addEventListener('click', () => {
-          const name = el.querySelector('.mp-name').textContent.trim();
-          if (confirm(`Éliminer ${name} ?`)) {
-            const code = sessionStorage.getItem('lgRoomCode');
-            firebase.database().ref(`rooms/${code}/players`).once('value').then(snap => {
-              const players = snap.val() || {};
-              const found = Object.values(players).find(p => p.name === name);
-              if (found) eliminatePlayer(found.id);
-            });
-          }
-        });
-      });
+    listEl.addEventListener('click', e => {
+      const btn = e.target.closest('.mp-elim-btn');
+      if (!btn) return;
+      const pid = btn.dataset.pid;
+      const name = btn.dataset.name;
+      if (confirm(`Éliminer ${name} ?`)) {
+        eliminatePlayer(pid);
+      }
     });
-    observer.observe(listEl, { childList: true, subtree: true });
   </script>
 </body>
 </html>

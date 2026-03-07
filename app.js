@@ -215,6 +215,12 @@ const ROLES_DEF = {
 
 const AVATARS = ["🐻","🦊","🦁","🐯","🐨","🦝","🦌","🐺","🐮","🐷","🐸","🦋","🐬","🦜","🦔"];
 
+// ── Helpers métier ─────────────────────────────────────
+/** Retourne true pour tout rôle appartenant au camp des loups */
+function isWolfRole(role) {
+  return ROLES_DEF[role]?.team === 'wolf';
+}
+
 // ── État local ────────────────────────────────────────
 let db, gameRef, playersRef, state;
 let myId = sessionStorage.getItem('lgPlayerId') || null;
@@ -263,7 +269,10 @@ function initHome() {
     const name = document.getElementById('player-name').value.trim();
     if (!name) { showError("Entre ton prénom d'abord !"); return; }
     hideError();
+    const btn = document.getElementById('btn-create');
+    btn.disabled = true; btn.textContent = '⏳ Création…';
     await createRoom(name);
+    btn.disabled = false; btn.textContent = '✨ Créer un salon';
   });
 
   document.getElementById('btn-join').addEventListener('click', async () => {
@@ -272,11 +281,24 @@ function initHome() {
     if (!name) { showError("Entre ton prénom d'abord !"); return; }
     if (!code || code.length !== 4) { showError("Entre un code de salon valide (4 lettres)."); return; }
     hideError();
+    const btn = document.getElementById('btn-join');
+    btn.disabled = true; btn.textContent = '⏳ Connexion…';
     await joinRoom(name, code);
+    btn.disabled = false; btn.textContent = '🚪 Rejoindre le salon';
   });
 
   document.getElementById('room-code').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase().slice(0, 4);
+  });
+
+  // Touche Entrée pour rejoindre/créer
+  ['player-name', 'room-code'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const code = document.getElementById('room-code').value.trim();
+      if (code.length === 4) document.getElementById('btn-join').click();
+      else document.getElementById('btn-create').click();
+    });
   });
 }
 
@@ -566,9 +588,19 @@ function initRole() {
   roomCode = sessionStorage.getItem('lgRoomCode');
   if (!myId || !roomCode) { window.location.href = 'index.html'; return; }
 
-  gameRef = db.ref(`rooms/${roomCode}`);
+  // Empêche l'écran de s'éteindre pendant la partie
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').catch(() => {});
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        navigator.wakeLock.request('screen').catch(() => {});
+      }
+    });
+  }
 
-  // On ecoute en temps reel et on attend que le role soit disponible
+  gameRef = db.ref(`rooms/${roomCode}`);
+  let roleLoaded = false;
+
   gameRef.on('value', snap => {
     const room = snap.val();
     if (!room) { window.location.href = 'index.html'; return; }
@@ -576,15 +608,18 @@ function initRole() {
     const players = room.players || {};
     const me = players[myId];
 
-    // Si le joueur n'existe plus dans la room
     if (!me) { window.location.href = 'index.html'; return; }
 
-    // Le role n'est pas encore ecrit — on attend le prochain evenement
+    // Mise à jour de l'indicateur de phase (nuit/jour)
+    updatePhaseIndicator(room.phase || 'night', room.day || 1);
+
     if (!me.role) return;
 
-    // Role disponible : on arrete d'ecouter et on affiche
-    gameRef.off();
-    renderRoleCard(me, room);
+    // Afficher la carte de rôle une seule fois
+    if (!roleLoaded) {
+      roleLoaded = true;
+      renderRoleCard(me, room);
+    }
   });
 }
 
@@ -614,14 +649,16 @@ function renderRoleCard(player, room) {
 
   document.getElementById('player-greeting').textContent = `${player.avatar} ${player.name}`;
 
-  // Afficher les autres loups si loup-garou
-  if (player.role === 'wolf' && room.players) {
-    const wolves = Object.values(room.players).filter(p => p.role === 'wolf' && p.id !== myId);
-    if (wolves.length > 0) {
+  // Afficher les complices pour tous les rôles du camp loup
+  if (isWolfRole(player.role) && room.players) {
+    const allies = Object.values(room.players).filter(p => isWolfRole(p.role) && p.id !== myId);
+    if (allies.length > 0) {
       const wolfSection = document.getElementById('wolf-allies');
       if (wolfSection) {
         wolfSection.classList.remove('hidden');
-        document.getElementById('wolf-list').textContent = wolves.map(w => `${w.avatar} ${w.name}`).join(', ');
+        const roleName = r => ROLES_DEF[r]?.name || r;
+        document.getElementById('wolf-list').textContent =
+          allies.map(w => `${w.avatar} ${w.name} (${roleName(w.role)})`).join(', ');
       }
     }
   }
@@ -661,21 +698,28 @@ function renderMaster(room) {
   if (list) {
     list.innerHTML = players.map(p => {
       const def = ROLES_DEF[p.role] || {};
+      const isDead = p.alive === false;
+      const teamClass = isWolfRole(p.role) ? 'team-wolf' : (def.team === 'solo' ? 'team-solo' : 'team-village');
       return `
-        <div class="master-player ${p.alive === false ? 'dead' : ''}">
-          <div class="avatar" style="${p.alive === false ? 'opacity:0.4;filter:grayscale(1)' : ''}">${p.avatar}</div>
-          <div class="mp-name" style="${p.alive === false ? 'text-decoration:line-through;opacity:0.5' : ''}">${escHtml(p.name)}</div>
-          <div class="mp-role">${def.emoji || ''} ${def.name || p.role || ''}</div>
-          ${p.alive === false ? '<div style="color:var(--red2);font-size:0.8rem">☠️ Éliminé</div>' : ''}
+        <div class="master-player ${isDead ? 'dead' : ''} ${teamClass}" data-pid="${p.id}">
+          <div class="mp-ava${isDead ? ' mp-dead' : ''}">${p.avatar}</div>
+          <div class="mp-details">
+            <div class="mp-name">${escHtml(p.name)}</div>
+            <div class="mp-role">${def.emoji || ''} ${def.name || p.role || ''}</div>
+          </div>
+          ${isDead
+            ? '<div class="mp-dead-tag">☠️</div>'
+            : `<button class="mp-elim-btn" data-pid="${p.id}" data-name="${escHtml(p.name)}" title="Éliminer ${escHtml(p.name)}">☠️</button>`
+          }
         </div>
       `;
     }).join('');
   }
 
-  // Stats
+  // Stats — tous les rôles loups comptent (variantes incluses)
   const alive = players.filter(p => p.alive !== false);
-  const wolves = alive.filter(p => p.role === 'wolf');
-  const villagers = alive.filter(p => ROLES_DEF[p.role]?.team === 'village');
+  const wolves = alive.filter(p => isWolfRole(p.role));
+  const villagers = alive.filter(p => !isWolfRole(p.role) && ROLES_DEF[p.role]?.team !== 'solo');
   document.getElementById('stat-alive').textContent = alive.length;
   document.getElementById('stat-wolves').textContent = wolves.length;
   document.getElementById('stat-village').textContent = villagers.length;
@@ -724,6 +768,15 @@ window.endGame = async function() {
 // ── Helpers ───────────────────────────────────────────
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Indicateur de phase (page role.html) ──────────────
+function updatePhaseIndicator(phase, day) {
+  const el = document.getElementById('phase-indicator');
+  if (!el) return;
+  const isNight = phase === 'night';
+  el.textContent = isNight ? `🌙 Nuit ${day}` : `☀️ Jour ${day}`;
+  el.className = `phase-indicator ${isNight ? 'phase-night' : 'phase-day'}`;
 }
 
 // ── Suppression des joueurs déconnectés (onDisconnect) ─
