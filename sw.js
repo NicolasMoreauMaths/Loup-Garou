@@ -1,5 +1,5 @@
 // Service Worker — Loup-Garou PWA
-const CACHE = 'loupgarou-v1';
+const CACHE = 'loupgarou-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -8,7 +8,9 @@ const ASSETS = [
   '/master.html',
   '/style.css',
   '/app.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
