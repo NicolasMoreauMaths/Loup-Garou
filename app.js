@@ -451,14 +451,17 @@ function renderRoleConfig(room, players) {
 
   if (balanceEl) {
     const diff = totalRoles - playerCount;
+    const conseil = playerCount <= 3 ? '1 loup minimum' :
+                    playerCount <= 6 ? '1–2 loups recommandés' :
+                    playerCount <= 10 ? '2–3 loups recommandés' : '3–4 loups recommandés';
     if (diff === 0) {
-      balanceEl.textContent = `✓ ${totalRoles} rôles pour ${playerCount} joueurs — parfait !`;
+      balanceEl.innerHTML = `✓ ${totalRoles} rôles pour ${playerCount} joueurs — parfait !<br><small style="opacity:0.75">${conseil}</small>`;
       balanceEl.className = 'alert alert-success';
     } else if (diff > 0) {
-      balanceEl.textContent = `${totalRoles} rôles pour ${playerCount} joueurs — retirez ${diff} rôle(s)`;
+      balanceEl.innerHTML = `${totalRoles} rôles pour ${playerCount} joueurs — retirez ${diff} rôle(s)<br><small style="opacity:0.75">${conseil}</small>`;
       balanceEl.className = 'alert alert-error';
     } else {
-      balanceEl.textContent = `${totalRoles} rôles pour ${playerCount} joueurs — ajoutez ${-diff} rôle(s)`;
+      balanceEl.innerHTML = `${totalRoles} rôles pour ${playerCount} joueurs — ajoutez ${-diff} rôle(s)<br><small style="opacity:0.75">${conseil}</small>`;
       balanceEl.className = 'alert alert-error';
     }
   }
@@ -609,6 +612,15 @@ function initRole() {
     const me = players[myId];
 
     if (!me) { window.location.href = 'index.html'; return; }
+
+    // Redirection si la partie est terminée
+    if (room.status === 'ended') {
+      gameRef.off();
+      const el = document.getElementById('role-container');
+      if (el) el.innerHTML = '<div class="waiting"><span>🏁 La partie est terminée !</span></div>';
+      setTimeout(() => { sessionStorage.clear(); window.location.href = 'index.html'; }, 3000);
+      return;
+    }
 
     // Mise à jour de l'indicateur de phase (nuit/jour)
     updatePhaseIndicator(room.phase || 'night', room.day || 1);

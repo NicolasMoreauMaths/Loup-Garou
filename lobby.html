@@ -98,6 +98,16 @@
     <div class="code-display" style="width:100%;max-width:420px;">
       <div class="code" id="room-code-display">····</div>
       <div class="code-label">Code du salon — partage-le avec les joueurs</div>
+      <button id="btn-copy-code" class="btn btn-secondary btn-sm" style="margin-top:12px;width:auto;padding:8px 20px;" onclick="
+        const code = document.getElementById('room-code-display').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+          this.textContent = '✅ Copié !';
+          setTimeout(() => { this.textContent = '📋 Copier le code'; }, 2000);
+        }).catch(() => {
+          this.textContent = code;
+          setTimeout(() => { this.textContent = '📋 Copier le code'; }, 2000);
+        });
+      ">📋 Copier le code</button>
     </div>
 
     <!-- Liste des joueurs -->

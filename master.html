@@ -10,10 +10,8 @@
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <style>
-    .master-player { cursor: pointer; transition: all 0.2s; }
-    .master-player:hover { border-color: var(--red); background: rgba(192,57,43,0.08); }
-    .master-player.dead { opacity: 0.5; cursor: default; }
-    .master-player.dead:hover { border-color: var(--border); background: var(--bg); }
+    .master-player { transition: all 0.2s; }
+    .master-player.dead { opacity: 0.5; }
 
     .guide-card {
       width: 100%; max-width: 420px;
@@ -189,15 +187,15 @@
         if (has('fox'))
           steps.push({ text: "🦊 Renard : « Ouvre les yeux. Désigne 3 joueurs consécutifs. » → Oui si loup parmi eux, non sinon (il perd son pouvoir si non). « Referme les yeux. »" });
 
+        if (has('healer'))
+          steps.push({ text: "🛡️ Salvateur : « Ouvre les yeux. Désigne un joueur à protéger cette nuit (pas le même qu'hier). Referme les yeux. »" });
+
         const wolfPlayers = players.filter(p => p.alive !== false && isWolfRole(p.role));
         if (wolfPlayers.length > 0)
           steps.push({ text: "🐺 Loups : « Loups-Garous, ouvrez les yeux. Reconnaissez-vous. Désignez une victime en silence. » → Mémorise le choix. « Refermez les yeux. »" });
 
         if (has('big_bad_wolf'))
           steps.push({ text: "😈 Grand Méchant Loup : peut désigner une 2e victime supplémentaire si aucun loup n'a encore été éliminé." });
-
-        if (has('healer'))
-          steps.push({ text: "🛡️ Salvateur : « Ouvre les yeux. Désigne un joueur à protéger cette nuit (pas le même qu'hier). Referme les yeux. »" });
 
         if (has('witch'))
           steps.push({ text: "🧙‍♀️ Sorcière : « Ouvre les yeux. » → Montre-lui la victime. « Potion de vie ? (👍) Potion de mort ? (désigne quelqu'un) Referme les yeux. »" });
